@@ -1,0 +1,50 @@
+version: '2'
+services:
+### phpmyadmin Container #########################################
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
+        environment:
+         - PMA_ARBITRARY=1
+        restart: always
+        ports:
+         - 8080:80
+        volumes:
+         - /sessions
+### MySQL Container #########################################
+    mysql:
+        image: mysql:5.7.17
+        environment:
+            - MYSQL_DATABASE=dev
+            - MYSQL_USER=root
+            - MYSQL_PASSWORD=password
+            - MYSQL_ROOT_PASSWORD=password
+        volumes:
+            - /mnt/production/data:/var/lib/mysql
+        ports:
+            - "3306:3306"
+        container_name: mysql
+### PHP-FPM Container #######################################
+    php:
+        image: php:7.1.0-fpm
+        volumes:
+            - /mnt/production/blog:/var/code
+        depends_on:
+            - mysql
+        links:
+            - mysql
+        container_name: php
+### Nginx Server Container ##################################
+    nginx:
+        image: nginx:1.11.8
+        volumes_from:
+            - php
+        volumes:
+            - /mnt/production/blog:/var/code
+            - /mnt/production/conf.d:/etc/nginx/conf.d
+        ports:
+            - "80:80"
+            - "443:443"
+        links:
+            - php
+        container_name: nginx
